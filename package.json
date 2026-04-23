@@ -1,0 +1,19 @@
+{
+  "name": "fichaje-fotografico",
+  "version": "1.0.0",
+  "description": "Sistema de fichaje fotografico - AFA Somos Todos 2026",
+  "private": true,
+  "scripts": {
+    "dev": "vercel dev",
+    "import": "node scripts/import-data.js"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^0.10.0",
+    "exceljs": "^4.4.0"
+  },
+  "devDependencies": {
+    "better-sqlite3": "^12.9.0",
+    "dotenv": "^17.4.2",
+    "vercel": "^39.0.0"
+  }
+}

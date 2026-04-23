@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#0a0e1a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Fichaje Fotográfico — AFA Somos Todos 2026</title>
+    <meta name="description" content="Sistema de fichaje fotográfico para jugadores AFA Somos Todos 2026">
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <div class="app-container" id="app">
+
+        <!-- User Name Modal -->
+        <div class="modal-overlay" id="userModal">
+            <div class="modal">
+                <h2>⚽ Fichaje Fotográfico</h2>
+                <p>AFA Somos Todos 2026 — Ingresá tu nombre para empezar</p>
+                <input type="text" id="userNameInput" placeholder="Tu nombre..." autofocus>
+                <button class="btn btn-primary" onclick="setUserName()" style="width:100%">Ingresar</button>
+            </div>
+        </div>
+
+        <!-- Header -->
+        <header class="app-header">
+            <div>
+                <h1>⚽ Fichaje Fotográfico</h1>
+                <span class="subtitle">AFA Somos Todos 2026</span>
+            </div>
+            <div class="user-badge" id="userBadge" style="display:none">
+                <span class="dot"></span>
+                <span id="userNameDisplay"></span>
+            </div>
+        </header>
+
+        <!-- Navigation — Desktop (top) -->
+        <nav class="nav-tabs nav-desktop" id="navTabs">
+            <button class="nav-tab active" data-view="dashboard" onclick="navigate('dashboard')">📊 Dashboard</button>
+            <button class="nav-tab" data-view="teams" onclick="navigate('teams')">🏟️ Equipos</button>
+            <button class="nav-tab" data-view="fichaje" onclick="navigate('fichaje')">📸 Fichaje</button>
+            <button class="nav-tab" data-view="activity" onclick="navigate('activity')">📋 Actividad</button>
+        </nav>
+
+        <!-- Navigation — Mobile (bottom bar) -->
+        <nav class="bottom-nav" id="bottomNav">
+            <button class="bottom-nav-item active" data-view="dashboard" onclick="navigate('dashboard')">
+                <span class="bottom-nav-icon">📊</span>
+                <span class="bottom-nav-label">Inicio</span>
+            </button>
+            <button class="bottom-nav-item" data-view="teams" onclick="navigate('teams')">
+                <span class="bottom-nav-icon">🏟️</span>
+                <span class="bottom-nav-label">Equipos</span>
+            </button>
+            <button class="bottom-nav-item fichaje-btn" data-view="fichaje" onclick="navigate('fichaje')">
+                <span class="bottom-nav-icon">📸</span>
+                <span class="bottom-nav-label">Fichaje</span>
+            </button>
+            <button class="bottom-nav-item" data-view="activity" onclick="navigate('activity')">
+                <span class="bottom-nav-icon">📋</span>
+                <span class="bottom-nav-label">Actividad</span>
+            </button>
+        </nav>
+
+        <!-- Toast Container -->
+        <div class="toast-container" id="toasts"></div>
+
+        <!-- ═══ VIEWS ═══ -->
+
+        <!-- Dashboard View -->
+        <section id="view-dashboard">
+            <div class="stats-grid" id="statsGrid"></div>
+            <h2 style="margin-bottom:1rem;font-size:1.1rem">Equipos — Resumen</h2>
+            <div class="teams-grid" id="teamsGrid"></div>
+        </section>
+
+        <!-- Team Detail View -->
+        <section id="view-team" style="display:none">
+            <div class="player-list-header">
+                <div style="display:flex;align-items:center;gap:0.75rem">
+                    <button class="btn-back" onclick="navigate('dashboard')">← Volver</button>
+                    <h2 id="teamTitle"></h2>
+                </div>
+                <div style="display:flex;gap:0.5rem;align-items:center">
+                    <button class="btn-export" id="btnExport" onclick="exportTeam()">⬇ Exportar Excel</button>
+                </div>
+            </div>
+            <div class="filter-bar" id="filterBar">
+                <button class="filter-btn active" data-filter="all" onclick="filterPlayers('all')">Todos</button>
+                <button class="filter-btn" data-filter="missing" onclick="filterPlayers('missing')">Sin Foto</button>
+                <button class="filter-btn" data-filter="ok" onclick="filterPlayers('ok')">OK</button>
+                <button class="filter-btn" data-filter="bad" onclick="filterPlayers('bad')">Malas</button>
+                <button class="filter-btn" data-filter="pending" onclick="filterPlayers('pending')">Pendientes</button>
+            </div>
+            <div class="players-grid" id="playersGrid"></div>
+        </section>
+
+        <!-- Fichaje (Camera) View -->
+        <section id="view-fichaje" style="display:none">
+            <div class="player-list-header">
+                <div style="display:flex;align-items:center;gap:0.75rem">
+                    <button class="btn-back" id="btnFichajeBack" onclick="exitFichaje()">← Volver</button>
+                    <h2 id="fichajeTitle">Fichaje</h2>
+                </div>
+            </div>
+
+            <!-- Team/player selector when entering from nav -->
+            <div id="fichajeSelector" style="display:none">
+                <p style="color:var(--text-secondary);margin-bottom:1rem">Seleccioná un equipo para empezar el fichaje:</p>
+                <div class="teams-grid" id="fichajeTeamsGrid"></div>
+            </div>
+
+            <!-- Camera + detail -->
+            <div class="fichaje-container" id="fichajeContent" style="display:none">
+                <div class="camera-section">
+                    <div class="camera-wrapper" id="cameraWrapper">
+                        <video id="cameraVideo" autoplay playsinline muted></video>
+                        <canvas id="cameraCanvas" style="display:none"></canvas>
+                        <div class="camera-guide" id="cameraGuide">
+                            <div class="oval"></div>
+                            <div class="hint">Centrar rostro en el óvalo</div>
+                        </div>
+                    </div>
+                    <div class="camera-controls">
+                        <button class="btn btn-primary" id="btnCapture" onclick="capturePhoto()">📸 Capturar</button>
+                        <button class="btn btn-secondary" id="btnRetake" onclick="retakePhoto()" style="display:none">↻ Repetir</button>
+                        <button class="btn btn-success" id="btnSave" onclick="savePhoto()" style="display:none">✓ Guardar</button>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="player-detail" id="playerDetail"></div>
+                    <div style="margin-top:1rem">
+                        <button class="btn btn-secondary" id="btnSkip" onclick="skipToNext()" style="width:100%">Siguiente jugador →</button>
+                    </div>
+                    <!-- Queue info -->
+                    <div style="margin-top:0.75rem;text-align:center;font-size:0.8rem;color:var(--text-muted)" id="queueInfo"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Activity View -->
+        <section id="view-activity" style="display:none">
+            <div class="activity-feed" id="activityFeed" style="max-height:none">
+                <h3>📋 Actividad Reciente</h3>
+                <div id="activityList"></div>
+            </div>
+        </section>
+
+    </div>
+
+    <script src="/app.js"></script>
+</body>
+</html>

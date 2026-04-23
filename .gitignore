@@ -1,0 +1,16 @@
+node_modules/
+.env
+fichaje.db
+*.pyc
+__pycache__/
+exportados/
+.vercel/
+.synapse/
+
+# Large Excel source files (not needed in deploy)
+LISTAS DE BUENA FE AFA SOMOS TODOS 2026/
+
+# Python analysis scripts (local only)
+analyze_excel.py
+check_format.py
+check_internal.py
