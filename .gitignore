@@ -7,8 +7,8 @@ exportados/
 .vercel/
 .synapse/
 
-# Large Excel source files (not needed in deploy)
-LISTAS DE BUENA FE AFA SOMOS TODOS 2026/
+# Large Excel source files are now REQUIRED for export templates on Vercel
+# LISTAS DE BUENA FE AFA SOMOS TODOS 2026/
 
 # Python analysis scripts (local only)
 analyze_excel.py

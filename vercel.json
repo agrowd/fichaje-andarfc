@@ -11,7 +11,8 @@
   ],
   "functions": {
     "api/**/*.js": {
-      "maxDuration": 30
+      "maxDuration": 30,
+      "includeFiles": "LISTAS DE BUENA FE AFA SOMOS TODOS 2026/**/*.xlsx"
     }
   },
   "routes": [
