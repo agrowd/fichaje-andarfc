@@ -19,7 +19,17 @@ module.exports = async function handler(req, res) {
       return res.send(pixel);
     }
 
-    const buf = Buffer.from(rows[0].photo_thumbnail, 'hex');
+    // Neon returns bytea as Buffer or Uint8Array
+    let buf = rows[0].photo_thumbnail;
+    if (!Buffer.isBuffer(buf)) {
+      if (buf instanceof Uint8Array) {
+        buf = Buffer.from(buf);
+      } else if (typeof buf === 'string') {
+        const hex = buf.startsWith('\\x') ? buf.slice(2) : buf;
+        buf = Buffer.from(hex, 'hex');
+      }
+    }
+
     res.setHeader('Content-Type', 'image/jpeg');
     res.setHeader('Cache-Control', 'public, max-age=120');
     return res.send(buf);

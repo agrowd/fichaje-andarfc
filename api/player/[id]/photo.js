@@ -9,6 +9,8 @@ module.exports = async function handler(req, res) {
     return getPhoto(playerId, res);
   } else if (req.method === 'POST') {
     return uploadPhoto(playerId, req, res);
+  } else if (req.method === 'OPTIONS') {
+    return res.status(200).end();
   } else {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -25,8 +27,19 @@ async function getPhoto(playerId, res) {
       return res.status(404).json({ error: 'No photo' });
     }
 
-    // photo_data is stored as hex in bytea, convert to Buffer
-    const buf = Buffer.from(rows[0].photo_data, 'hex');
+    // Neon returns bytea as Buffer directly
+    let buf = rows[0].photo_data;
+    if (!Buffer.isBuffer(buf)) {
+      // If it's a Uint8Array or hex string, convert
+      if (buf instanceof Uint8Array) {
+        buf = Buffer.from(buf);
+      } else if (typeof buf === 'string') {
+        // Remove \x prefix if present
+        const hex = buf.startsWith('\\x') ? buf.slice(2) : buf;
+        buf = Buffer.from(hex, 'hex');
+      }
+    }
+
     res.setHeader('Content-Type', 'image/jpeg');
     res.setHeader('Cache-Control', 'public, max-age=60');
     return res.send(buf);
@@ -45,22 +58,18 @@ async function uploadPhoto(playerId, req, res) {
       return res.status(400).json({ error: 'No image data' });
     }
 
-    // Parse base64
+    // Parse base64 data URL
     let b64 = image;
     if (b64.includes(',')) b64 = b64.split(',')[1];
     const photoBuffer = Buffer.from(b64, 'base64');
 
-    // Store in DB as bytea hex
-    const hexData = '\\x' + photoBuffer.toString('hex');
+    console.log(`[PHOTO] Uploading for player ${playerId}, size: ${photoBuffer.length} bytes`);
 
-    // Create a simple thumbnail (just store at reduced quality, first 20KB)
-    // For serverless, we skip heavy image processing and store as-is
-    const thumbHex = hexData; // Same for now, frontend will scale via CSS
-
+    // Neon serverless driver accepts Buffer for bytea columns directly
     await sql`
       UPDATE players SET
-        photo_data = ${hexData}::bytea,
-        photo_thumbnail = ${thumbHex}::bytea,
+        photo_data = ${photoBuffer},
+        photo_thumbnail = ${photoBuffer},
         photo_source = 'webcam',
         photo_status = 'pending_review',
         updated_at = NOW()
@@ -73,19 +82,22 @@ async function uploadPhoto(playerId, req, res) {
     `;
 
     if (player.length) {
+      const pName = (player[0].name || '') + ' ' + (player[0].surname || '');
       await sql`
         INSERT INTO activity_log (action, player_id, team_id, user_name, details)
         VALUES ('photo_captured', ${playerId}, ${player[0].team_id}, ${user_name},
-                ${'Foto capturada para ' + player[0].name + ' ' + player[0].surname})
+                ${'Foto capturada para ' + pName.trim()})
       `;
     }
+
+    console.log(`[PHOTO] Success for player ${playerId}`);
 
     return res.json({
       success: true,
       message: `Foto guardada para jugador #${playerId}`
     });
   } catch (e) {
-    console.error('Error uploading photo:', e);
+    console.error('[PHOTO] Error uploading:', e);
     return res.status(500).json({ error: e.message });
   }
 }
