@@ -334,11 +334,10 @@ function exitFichaje() {
 // ─── Camera ──────────────────────────────────────────────
 async function startCamera() {
     try {
-        // Use front camera for fichaje (selfie style on mobile)
-        const isMobile = window.innerWidth <= 640;
+        // Always use rear camera for fichaje (someone else takes the photo)
         const constraints = {
             video: {
-                facingMode: isMobile ? 'user' : 'environment',
+                facingMode: { ideal: 'environment' },
                 width: { ideal: 720 },
                 height: { ideal: 960 }
             }
