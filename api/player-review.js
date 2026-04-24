@@ -1,10 +1,13 @@
-// api/player/[id]/review.js — POST review a photo
-const { getSQL } = require('../../_db');
+// api/player-review.js — POST /api/player-review?id=X
+const { getSQL } = require('./_db');
 
 module.exports = async function handler(req, res) {
+  if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   const playerId = parseInt(req.query.id);
+  if (!playerId) return res.status(400).json({ error: 'Missing id' });
+
   const { status, user_name = 'Anónimo' } = req.body;
 
   if (!['ok', 'bad'].includes(status)) {

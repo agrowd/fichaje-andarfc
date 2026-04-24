@@ -1,9 +1,12 @@
-// api/player/[id]/photo.js — GET (serve photo) / POST (upload photo)
-const { getSQL } = require('../../_db');
+// api/player-photo.js — GET/POST /api/player-photo?id=X
+const { getSQL } = require('./_db');
 
 module.exports = async function handler(req, res) {
-  const { id } = req.query;
-  const playerId = parseInt(id);
+  const playerId = parseInt(req.query.id);
+
+  if (!playerId) {
+    return res.status(400).json({ error: 'Missing id parameter' });
+  }
 
   if (req.method === 'GET') {
     return getPhoto(playerId, res);
@@ -27,14 +30,11 @@ async function getPhoto(playerId, res) {
       return res.status(404).json({ error: 'No photo' });
     }
 
-    // Neon returns bytea as Buffer directly
     let buf = rows[0].photo_data;
     if (!Buffer.isBuffer(buf)) {
-      // If it's a Uint8Array or hex string, convert
       if (buf instanceof Uint8Array) {
         buf = Buffer.from(buf);
       } else if (typeof buf === 'string') {
-        // Remove \x prefix if present
         const hex = buf.startsWith('\\x') ? buf.slice(2) : buf;
         buf = Buffer.from(hex, 'hex');
       }
@@ -58,14 +58,12 @@ async function uploadPhoto(playerId, req, res) {
       return res.status(400).json({ error: 'No image data' });
     }
 
-    // Parse base64 data URL
     let b64 = image;
     if (b64.includes(',')) b64 = b64.split(',')[1];
     const photoBuffer = Buffer.from(b64, 'base64');
 
     console.log(`[PHOTO] Uploading for player ${playerId}, size: ${photoBuffer.length} bytes`);
 
-    // Neon serverless driver accepts Buffer for bytea columns directly
     await sql`
       UPDATE players SET
         photo_data = ${photoBuffer},
@@ -76,7 +74,6 @@ async function uploadPhoto(playerId, req, res) {
       WHERE id = ${playerId}
     `;
 
-    // Get player info for logging
     const player = await sql`
       SELECT name, surname, team_id FROM players WHERE id = ${playerId}
     `;
@@ -90,12 +87,7 @@ async function uploadPhoto(playerId, req, res) {
       `;
     }
 
-    console.log(`[PHOTO] Success for player ${playerId}`);
-
-    return res.json({
-      success: true,
-      message: `Foto guardada para jugador #${playerId}`
-    });
+    return res.json({ success: true, message: `Foto guardada para jugador #${playerId}` });
   } catch (e) {
     console.error('[PHOTO] Error uploading:', e);
     return res.status(500).json({ error: e.message });

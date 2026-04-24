@@ -195,7 +195,7 @@ function renderPlayers(players) {
     grid.innerHTML = players.map(p => `
         <div class="player-card" onclick="openPlayerFichaje(${p.id}, ${currentTeamId}, '${esc(currentTeamName)}')">
             <div class="player-avatar status-${p.photo_status}">
-                ${p.photo_status !== 'missing' ? `<img src="${API}/api/player/${p.id}/thumbnail" alt="">` : '👤'}
+                ${p.photo_status !== 'missing' ? `<img src="${API}/api/player-thumbnail?id=${p.id}" alt="">` : '👤'}
             </div>
             <div class="player-info">
                 <div class="name">${esc(p.name || '')} ${esc(p.surname || '')}</div>
@@ -281,7 +281,7 @@ function loadFichajePlayer() {
     detail.innerHTML = `
         <div class="detail-header">
             <div class="detail-avatar status-${p.photo_status}" id="detailAvatar">
-                ${p.photo_status !== 'missing' ? `<img src="${API}/api/player/${p.id}/thumbnail" alt="">` : '👤'}
+                ${p.photo_status !== 'missing' ? `<img src="${API}/api/player-thumbnail?id=${p.id}" alt="">` : '👤'}
             </div>
             <div>
                 <div class="detail-name">${esc(p.name || '')} ${esc(p.surname || '')}</div>
@@ -407,7 +407,7 @@ async function savePhoto() {
     document.getElementById('btnSave').textContent = '⏳ Guardando...';
 
     try {
-        const res = await fetch(`${API}/api/player/${player.id}/photo`, {
+        const res = await fetch(`${API}/api/player-photo?id=${player.id}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ image: capturedImageData, user_name: userName })
@@ -434,7 +434,7 @@ async function savePhoto() {
 
 async function reviewPhoto(playerId, status) {
     try {
-        const res = await fetch(`${API}/api/player/${playerId}/review`, {
+        const res = await fetch(`${API}/api/player-review?id=${playerId}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ status, user_name: userName })
