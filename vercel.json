@@ -10,10 +10,10 @@
     }
   ],
   "functions": {
-    "api/**/*.js": {
+    "api/*.js": {
       "maxDuration": 30
     },
-    "api/**/*.py": {
+    "api/*.py": {
       "maxDuration": 30
     }
   },
