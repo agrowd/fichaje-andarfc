@@ -43,14 +43,27 @@ class handler(BaseHTTPRequestHandler):
             cur.close()
             conn.close()
             
-            # Find template
-            template_path = os.path.join(os.getcwd(), 'LISTAS DE BUENA FE AFA SOMOS TODOS 2026', t_filename)
-            if not os.path.exists(template_path):
-                self.send_error(500, f"Template file not found: {t_filename}")
-                return
+            # Find template via Vercel static CDN or GitHub raw
+            import urllib.request
+            import urllib.parse
+            
+            # Since Vercel serves the static files in the repository:
+            encoded_filename = urllib.parse.quote(t_filename)
+            url = f"https://raw.githubusercontent.com/agrowd/fichaje-andarfc/main/LISTAS%20DE%20BUENA%20FE%20AFA%20SOMOS%20TODOS%202026/{encoded_filename}"
+            
+            try:
+                req = urllib.request.Request(url)
+                with urllib.request.urlopen(req) as response:
+                    template_data = response.read()
+            except Exception as url_e:
+                # Fallback to Vercel URL if GitHub raw fails
+                fallback_url = f"https://fichaje-andarfc.vercel.app/LISTAS%20DE%20BUENA%20FE%20AFA%20SOMOS%20TODOS%202026/{encoded_filename}"
+                req = urllib.request.Request(fallback_url)
+                with urllib.request.urlopen(req) as response:
+                    template_data = response.read()
                 
             # Process Excel
-            wb = openpyxl.load_workbook(template_path)
+            wb = openpyxl.load_workbook(io.BytesIO(template_data))
             ws = wb[t_sheet] if t_sheet in wb.sheetnames else wb.active
             
             # Clear old images (clean up the template)

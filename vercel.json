@@ -14,8 +14,7 @@
       "maxDuration": 30
     },
     "api/**/*.py": {
-      "maxDuration": 30,
-      "includeFiles": "LISTAS DE BUENA FE AFA SOMOS TODOS 2026/**/*.xlsx"
+      "maxDuration": 30
     }
   },
   "routes": [
