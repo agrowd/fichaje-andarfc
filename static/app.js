@@ -463,7 +463,7 @@ async function reviewPhoto(playerId, status) {
 // ─── Export ──────────────────────────────────────────────
 function exportTeam() {
     if (!currentTeamId) return;
-    window.open(`${API}/api/export?id=${currentTeamId}`, '_blank');
+    window.open(`${API}/api/export-excel?id=${currentTeamId}`, '_blank');
     showToast('Exportando Excel...', 'info');
 }
 
