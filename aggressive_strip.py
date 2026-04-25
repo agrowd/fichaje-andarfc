@@ -1,11 +1,13 @@
 import zipfile
 import os
 import shutil
+import time
 
 def aggressive_strip_drawings(filepath):
     temp_dir = "temp_unzip"
     if os.path.exists(temp_dir):
         shutil.rmtree(temp_dir)
+    os.makedirs(temp_dir, exist_ok=True)
     
     with zipfile.ZipFile(filepath, 'r') as zip_ref:
         zip_ref.extractall(temp_dir)
@@ -38,8 +40,23 @@ def aggressive_strip_drawings(filepath):
                 arcname = os.path.relpath(file_path, temp_dir)
                 zipf.write(file_path, arcname)
                 
-    shutil.rmtree(temp_dir)
+    # Retry rmtree a few times to avoid Windows locking issues
+    for _ in range(5):
+        try:
+            shutil.rmtree(temp_dir)
+            break
+        except Exception:
+            time.sleep(1)
+            
+    # Replace original file
+    if os.path.exists(filepath):
+        os.remove(filepath)
     shutil.move(new_filepath, filepath)
     print(f"Aggressively stripped {filepath}")
 
-aggressive_strip_drawings(os.path.join("LISTAS DE BUENA FE AFA SOMOS TODOS 2026", "TEST.xlsx"))
+if __name__ == "__main__":
+    folder = "LISTAS DE BUENA FE AFA SOMOS TODOS 2026"
+    for f in os.listdir(folder):
+        if f.endswith(".xlsx"):
+            aggressive_strip_drawings(os.path.join(folder, f))
+    print("Done stripping all files!")
