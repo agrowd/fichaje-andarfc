@@ -1,11 +1,13 @@
 from http.server import BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
-import psycopg2
+import pg8000
 import os
 import openpyxl
 from openpyxl.drawing.image import Image as OpenpyxlImage
 from PIL import Image as PILImage
 import io
+import urllib.request
+import urllib.parse
 
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
@@ -20,8 +22,22 @@ class handler(BaseHTTPRequestHandler):
                 
             team_id = int(team_id)
             
-            # Connect to Neon Postgres
-            conn = psycopg2.connect(os.environ.get('DATABASE_URL'))
+            # Connect to Neon Postgres using pg8000 (pure python)
+            # DATABASE_URL = postgresql://user:pass@host:port/db?sslmode=require
+            db_url = os.environ.get('DATABASE_URL')
+            if not db_url:
+                raise Exception("DATABASE_URL not set")
+            
+            # Parse connection string manually for pg8000
+            # Simple parsing for standard postgresql://
+            p = urlparse(db_url)
+            conn = pg8000.connect(
+                user=p.username,
+                password=p.password,
+                host=p.hostname,
+                port=p.port or 5432,
+                database=p.path.lstrip('/')
+            )
             cur = conn.cursor()
             
             # Get team info
@@ -43,12 +59,9 @@ class handler(BaseHTTPRequestHandler):
             cur.close()
             conn.close()
             
-            # Find template via Vercel static CDN or GitHub raw
-            import urllib.request
-            import urllib.parse
-            
-            # Since Vercel serves the static files in the repository:
+            # Download template from GitHub raw (to stay under Vercel 50MB function limit)
             encoded_filename = urllib.parse.quote(t_filename)
+            # Use raw.githubusercontent.com for the templates
             url = f"https://raw.githubusercontent.com/agrowd/fichaje-andarfc/main/LISTAS%20DE%20BUENA%20FE%20AFA%20SOMOS%20TODOS%202026/{encoded_filename}"
             
             try:
@@ -56,7 +69,7 @@ class handler(BaseHTTPRequestHandler):
                 with urllib.request.urlopen(req) as response:
                     template_data = response.read()
             except Exception as url_e:
-                # Fallback to Vercel URL if GitHub raw fails
+                # Fallback to Vercel URL
                 fallback_url = f"https://fichaje-andarfc.vercel.app/LISTAS%20DE%20BUENA%20FE%20AFA%20SOMOS%20TODOS%202026/{encoded_filename}"
                 req = urllib.request.Request(fallback_url)
                 with urllib.request.urlopen(req) as response:
@@ -74,7 +87,7 @@ class handler(BaseHTTPRequestHandler):
                 if not photo_bytes:
                     continue
                 
-                # In PostgreSQL, bytea might be returned as memoryview or bytes
+                # In pg8000/bytea, photo_bytes is already bytes
                 if isinstance(photo_bytes, memoryview):
                     photo_bytes = photo_bytes.tobytes()
                     
@@ -100,7 +113,7 @@ class handler(BaseHTTPRequestHandler):
                 
                 xl_img = OpenpyxlImage(resized_stream)
                 
-                # Match original oneCellAnchor behavior
+                # OneCellAnchor
                 col_idx = 6 # G (0-indexed A=0)
                 row_idx = p_row - 1 # 0-indexed
                 
@@ -130,4 +143,3 @@ class handler(BaseHTTPRequestHandler):
             self.end_headers()
             import json
             self.wfile.write(json.dumps({"error": str(e)}).encode())
-            
