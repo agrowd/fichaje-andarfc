@@ -17,6 +17,12 @@
       "maxDuration": 30
     }
   },
+  "functions": {
+    "api/export_excel.py": {
+      "runtime": "vercel-python@0.1.0",
+      "maxDuration": 30
+    }
+  },
   "routes": [
     { "handle": "filesystem" },
     { "src": "/(.*)", "dest": "/index.html" }
